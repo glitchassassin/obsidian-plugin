@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-glitchassassin",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Personal command center by glitchassassin",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
