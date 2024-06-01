@@ -1,4 +1,11 @@
-import { App, stringifyYaml } from "obsidian";
+import {
+	App,
+	CachedMetadata,
+	TFile,
+	getFrontMatterInfo,
+	parseYaml,
+	stringifyYaml,
+} from "obsidian";
 import { extractPos } from "utils/extractPos";
 
 export const TASK_STATUS = {
@@ -7,13 +14,13 @@ export const TASK_STATUS = {
 } as const;
 export type TASK_STATUS_ENUM = (typeof TASK_STATUS)[keyof typeof TASK_STATUS];
 
-interface ListItem {
+export interface ListItem {
 	date?: Date;
 	task?: TASK_STATUS_ENUM;
 	description: string;
 }
 
-interface Contact {
+export interface Contact {
 	name: string;
 	email: string;
 	phone: string;
@@ -59,7 +66,10 @@ export async function readContact(
 	const file = app.vault.getFileByPath(path);
 	if (!file || !cache) return null;
 	const data = await app.vault.cachedRead(file);
+	return parseContact(data, cache);
+}
 
+export function parseContact(data: string, cache: CachedMetadata) {
 	const contact: Contact = {
 		name: cache.frontmatter?.name ?? "",
 		email: cache.frontmatter?.email ?? "",
@@ -91,7 +101,15 @@ export async function readContact(
 	return contact;
 }
 
-export async function writeContact(app: App, path: string, contact: Contact) {
+export async function listContacts(app: App, path: string) {
+	return (
+		app.vault
+			.getFolderByPath(path)
+			?.children.filter((f): f is TFile => f instanceof TFile) ?? []
+	);
+}
+
+export function stringifyContact(contact: Contact) {
 	const { lists, ...frontmatter } = contact;
 	let data = `---
 ${stringifyYaml(frontmatter)}
@@ -100,14 +118,37 @@ ${stringifyYaml(frontmatter)}
 # ${frontmatter.name}
 
 `;
+	if (frontmatter.image) {
+		data += `![[${frontmatter.image}]]\n\n`;
+	}
 	for (const heading in lists) {
 		data += `## ${heading}\n\n${lists[heading].map(writeListItem).join("\n")}\n\n`;
 	}
+	return data;
+}
 
+export async function addContact(app: App, path: string, contact: Contact) {
+	const data = stringifyContact(contact);
+	return await app.vault.create(path, data);
+}
+
+export async function addContactListItem(
+	app: App,
+	path: string,
+	list: string,
+	item: ListItem,
+) {
+	const cache = app.metadataCache.getCache(path);
 	const file = app.vault.getFileByPath(path);
-	if (file) {
-		app.vault.modify(file, data);
-	} else {
-		app.vault.create(path, data);
-	}
+	if (!file || !cache) return;
+	app.vault.process(file, (data) => {
+		const contact = parseContact(data, cache);
+		if (!contact) return data;
+
+		contact.lists[list] ??= [];
+		contact.lists[list].push(item);
+
+		return stringifyContact(contact);
+	});
+	return file;
 }

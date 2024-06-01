@@ -1,23 +1,18 @@
-import { readContact, writeContact } from "models/Contact";
-import {
-	App,
-	Editor,
-	MarkdownView,
-	Modal,
-	Notice,
-	Plugin,
-	PluginSettingTab,
-	Setting,
-} from "obsidian";
+import { SelectContactModal } from "actions/selectContactModal";
+import { AddNewContactModal } from "actions/addNewContactModal";
+import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { AddInteractionModal } from "actions/addInteractionModal";
 
 // Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
-	mySetting: string;
+	contactsDirectory: string;
+	interactionLogList: string;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: "default",
+	contactsDirectory: "Contacts",
+	interactionLogList: "Contact Log",
 };
 
 export default class MyPlugin extends Plugin {
@@ -27,30 +22,63 @@ export default class MyPlugin extends Plugin {
 		await this.loadSettings();
 
 		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon(
+		this.addRibbonIcon(
 			"user-plus",
 			"Add New Contact",
 			(evt: MouseEvent) => {
-				// Called when the user clicks the icon.
-				readContact(this.app, "Contacts/Acors, Dan & Shanna.md").then(
+				// Launch AddNewContact modal
+				new AddNewContactModal(
+					this.app,
+					this.settings.contactsDirectory,
+				).open();
+			},
+		);
+		this.addRibbonIcon(
+			"tablet-smartphone",
+			"Record Contact Interaction",
+			(evt: MouseEvent) => {
+				new SelectContactModal(
+					this.app,
+					this.settings.contactsDirectory,
 					(contact) =>
-						contact &&
-						writeContact(this.app, "Contacts/test.md", contact),
-				);
+						new AddInteractionModal(
+							this.app,
+							this.settings,
+							contact.basename,
+						).open(),
+				).open();
 			},
 		);
 
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: "open-sample-modal-simple",
-			name: "Open sample modal (simple)",
+			id: "glitchassassin-add-new-contact",
+			name: "Add new contact",
 			callback: () => {
-				new SampleModal(this.app).open();
+				new AddNewContactModal(
+					this.app,
+					this.settings.contactsDirectory,
+				).open();
+			},
+		});
+		this.addCommand({
+			id: "glitchassassin-add-new-contact",
+			name: "Record contact interaction",
+			callback: () => {
+				new SelectContactModal(
+					this.app,
+					this.settings.contactsDirectory,
+					(contact) =>
+						new AddInteractionModal(
+							this.app,
+							this.settings,
+							contact.basename,
+						).open(),
+				).open();
 			},
 		});
 
 		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+		this.addSettingTab(new ContactsSettingTab(this.app, this));
 	}
 
 	onunload() {}
@@ -68,23 +96,7 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText("Woah!");
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
-
-class SampleSettingTab extends PluginSettingTab {
+class ContactsSettingTab extends PluginSettingTab {
 	plugin: MyPlugin;
 
 	constructor(app: App, plugin: MyPlugin) {
@@ -97,15 +109,23 @@ class SampleSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
+		new Setting(containerEl).setName("Contacts Directory").addText((text) =>
+			text
+				.setPlaceholder("Enter your secret")
+				.setValue(this.plugin.settings.contactsDirectory)
+				.onChange(async (value) => {
+					this.plugin.settings.contactsDirectory = value;
+					await this.plugin.saveSettings();
+				}),
+		);
 		new Setting(containerEl)
-			.setName("Setting #1")
-			.setDesc("It's a secret")
+			.setName("Interactions list name")
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your secret")
-					.setValue(this.plugin.settings.mySetting)
+					.setValue(this.plugin.settings.interactionLogList)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						this.plugin.settings.interactionLogList = value;
 						await this.plugin.saveSettings();
 					}),
 			);
