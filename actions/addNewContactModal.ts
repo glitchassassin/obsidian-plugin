@@ -1,4 +1,3 @@
-import MyPlugin from "main";
 import { Contact, addContact } from "models/Contact";
 import { Modal, App, Setting } from "obsidian";
 
@@ -11,8 +10,8 @@ export class AddNewContactModal extends Modal {
 		tags: [],
 		events: [],
 		lists: {
-			Notes: [],
-			"Contact Log": [],
+			Notes: [{ description: "" }],
+			"Contact Log": [{ date: new Date(), description: "Contact added" }],
 		},
 	};
 	constructor(
