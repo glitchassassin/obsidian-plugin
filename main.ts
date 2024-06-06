@@ -1,22 +1,23 @@
 import { SelectContactModal } from "actions/selectContactModal";
 import { AddNewContactModal } from "actions/addNewContactModal";
-import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 import { AddInteractionModal } from "actions/addInteractionModal";
+import { Contact, readContact } from "models/Contact";
 
 // Remember to rename these classes and interfaces!
 
-interface MyPluginSettings {
+interface ObsidianGlitchassassinSettings {
 	contactsDirectory: string;
 	interactionLogList: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: ObsidianGlitchassassinSettings = {
 	contactsDirectory: "Contacts",
 	interactionLogList: "Contact Log",
 };
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class ObsidianGlitchassassin extends Plugin {
+	settings: ObsidianGlitchassassinSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -94,12 +95,19 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	async getContacts(): Promise<Array<Contact>> {
+		const contactFiles = this.app.vault.getFolderByPath(this.settings.contactsDirectory)?.children
+			.filter((fileOrFolder): fileOrFolder is TFile => fileOrFolder instanceof TFile) ?? [];
+		const contacts = await Promise.all(contactFiles.map(file => readContact(this.app, file.path)));
+		return contacts.filter((contact): contact is Contact => Boolean(contact));
+	}
 }
 
 class ContactsSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+	plugin: ObsidianGlitchassassin;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: ObsidianGlitchassassin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
