@@ -29,6 +29,7 @@ export interface Contact {
 	tags: string[];
 	lists: Record<string, Array<ListItem>>;
 	lastContacted?: Date;
+	filename: string;
 }
 
 function readListItem(line: string): ListItem {
@@ -67,11 +68,12 @@ export async function readContact(
 	const file = app.vault.getFileByPath(path);
 	if (!file || !cache) return null;
 	const data = await app.vault.cachedRead(file);
-	return parseContact(data, cache);
+	return parseContact(file.basename, data, cache);
 }
 
-export function parseContact(data: string, cache: CachedMetadata) {
+export function parseContact(filename: string, data: string, cache: CachedMetadata) {
 	const contact: Contact = {
+		filename,
 		name: cache.frontmatter?.name ?? "",
 		email: cache.frontmatter?.email ?? "",
 		phone: cache.frontmatter?.phone ?? "",
@@ -148,7 +150,7 @@ export async function addContactListItem(
 	const file = app.vault.getFileByPath(path);
 	if (!file || !cache) return;
 	app.vault.process(file, (data) => {
-		const contact = parseContact(data, cache);
+		const contact = parseContact(file.basename, data, cache);
 		if (!contact) return data;
 
 		contact.lists[list] ??= [];

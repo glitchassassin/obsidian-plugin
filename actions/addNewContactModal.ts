@@ -3,6 +3,7 @@ import { Modal, App, Setting } from "obsidian";
 
 export class AddNewContactModal extends Modal {
 	contact: Contact = {
+		filename: "",
 		name: "",
 		email: "",
 		phone: "",
