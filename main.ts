@@ -100,7 +100,9 @@ export default class ObsidianGlitchassassin extends Plugin {
 		const contactFiles = this.app.vault.getFolderByPath(this.settings.contactsDirectory)?.children
 			.filter((fileOrFolder): fileOrFolder is TFile => fileOrFolder instanceof TFile) ?? [];
 		const contacts = await Promise.all(contactFiles.map(file => readContact(this.app, file.path)));
-		return contacts.filter((contact): contact is Contact => Boolean(contact));
+		return contacts.filter((contact): contact is Contact => Boolean(contact)).sort((a, b) => {
+			return (a.lastContacted?.getTime() ?? 0) - (b.lastContacted?.getTime() ?? 0);
+		});
 	}
 }
 

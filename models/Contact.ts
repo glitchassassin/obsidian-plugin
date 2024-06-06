@@ -28,6 +28,7 @@ export interface Contact {
 	events: string[];
 	tags: string[];
 	lists: Record<string, Array<ListItem>>;
+	lastContacted?: Date;
 }
 
 function readListItem(line: string): ListItem {
@@ -95,6 +96,11 @@ export function parseContact(data: string, cache: CachedMetadata) {
 					.split("\n")
 					.map(readListItem),
 			);
+			// set lastContacted dynamically when read
+			contact.lastContacted = contact.lists[currentHeader].map(i => i.date).reduce((a, b) => {
+				if (a && b) return a.getTime() > b.getTime() ? a : b;
+				return a ?? b;
+			}, contact.lastContacted)
 		}
 	}
 

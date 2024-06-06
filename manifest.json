@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-glitchassassin",
 	"name": "glitchassassin customizations",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"minAppVersion": "0.15.0",
 	"description": "Custom logic for glitchassassin",
 	"author": "glitchassassin",
