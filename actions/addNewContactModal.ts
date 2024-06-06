@@ -6,10 +6,12 @@ export class AddNewContactModal extends Modal {
 		filename: "",
 		name: "",
 		email: "",
+		needsPing: false,
 		phone: "",
 		image: "",
 		tags: [],
 		events: [],
+		upcomingEvent: false,
 		lists: {
 			Notes: [{ description: "" }],
 			"Contact Log": [{ date: new Date(), description: "Contact added" }],

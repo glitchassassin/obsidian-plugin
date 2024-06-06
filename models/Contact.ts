@@ -1,9 +1,8 @@
+import moment from "moment";
 import {
 	App,
 	CachedMetadata,
 	TFile,
-	getFrontMatterInfo,
-	parseYaml,
 	stringifyYaml,
 } from "obsidian";
 import { extractPos } from "utils/extractPos";
@@ -25,7 +24,10 @@ export interface Contact {
 	email: string;
 	phone: string;
 	image: string;
+	pingFrequency?: moment.Duration;
+	needsPing: boolean;
 	events: string[];
+	upcomingEvent: boolean;
 	tags: string[];
 	lists: Record<string, Array<ListItem>>;
 	lastContacted?: Date;
@@ -60,6 +62,17 @@ function writeListItem(item: ListItem): string {
 	return `- ${task}${date}${item.description}`;
 }
 
+function parseDuration(duration: string|undefined) {
+	if (!duration) return undefined;
+	const match = duration.match(/(\d+) (.+)/)
+	if (!match) return undefined
+	try {
+		return moment.duration(parseInt(match[1]), match[2] as moment.unitOfTime.DurationConstructor);
+	} catch {
+		return undefined;
+	}
+}
+
 export async function readContact(
 	app: App,
 	path: string,
@@ -78,7 +91,10 @@ export function parseContact(filename: string, data: string, cache: CachedMetada
 		email: cache.frontmatter?.email ?? "",
 		phone: cache.frontmatter?.phone ?? "",
 		image: cache.frontmatter?.image ?? "",
+		pingFrequency: parseDuration(cache.frontmatter?.pingFrequency),
+		needsPing: false,
 		events: cache.frontmatter?.events ?? [],
+		upcomingEvent: false,
 		tags: cache.frontmatter?.tags ?? [],
 		lists: {},
 	};
@@ -104,6 +120,32 @@ export function parseContact(filename: string, data: string, cache: CachedMetada
 				return a ?? b;
 			}, contact.lastContacted)
 		}
+	}
+
+	for (const event of contact.events) {
+		const match = event.match(/\d{4}\-\d{2}\-\d{2}/);
+		if (match) {
+			const currentYear = moment().year();
+
+			// Create anniversary date for the current year
+			let anniversary = moment(match[0]).year(currentYear);
+
+			// If the anniversary has already passed this year, set it to next year
+			if (anniversary.isBefore(moment(), 'day')) {
+				anniversary = anniversary.add(1, 'years');
+			}
+
+			// if anniversary is within the next week, and contact has not been pinged, set upcomingEvent
+			const pingThreshold = anniversary.subtract(1, "week");
+			if (moment().isAfter(pingThreshold) && !(contact.lastContacted && moment(contact.lastContacted).isAfter(pingThreshold))) {
+				contact.upcomingEvent = true;
+				break;
+			}
+		}
+	}
+
+	if (contact.pingFrequency && contact.lastContacted && moment(contact.lastContacted).add(contact.pingFrequency) < moment()) {
+		contact.needsPing = true;
 	}
 
 	return contact;
