@@ -1,4 +1,4 @@
-import { addContactListItem, listContacts, readContact } from "models/Contact";
+import { listContacts, readContact } from "models/Contact";
 import { Modal, App, Setting } from "obsidian";
 
 export class AddGroupEmailInteractionModal extends Modal {
@@ -9,7 +9,6 @@ export class AddGroupEmailInteractionModal extends Modal {
 			contactsDirectory: string;
 			interactionLogList: string;
 		},
-		public contact: string,
 	) {
 		super(app);
 	}
