@@ -1,4 +1,4 @@
-import { listContacts, readContact } from "models/Contact";
+import { addContactListItem, listContacts, readContact } from "models/Contact";
 import { Modal, App, Setting } from "obsidian";
 
 export class AddGroupEmailInteractionModal extends Modal {
@@ -31,18 +31,12 @@ export class AddGroupEmailInteractionModal extends Modal {
 			)
 				continue;
 			// contact exists, is in the deacon care group, and has an email address
-			console.log(
-				"Adding email interaction to",
-				contactData.name,
-				":",
-				emailDescription,
+			await addContactListItem(
+				this.app,
+				contact.path,
+				this.settings.interactionLogList,
+				{ date: new Date(), description: "✉️" + emailDescription },
 			);
-			// await addContactListItem(
-			// 	this.app,
-			// 	contact.path,
-			// 	this.settings.interactionLogList,
-			// 	{ date: new Date(), description: emailDescription },
-			// );
 		}
 	}
 
