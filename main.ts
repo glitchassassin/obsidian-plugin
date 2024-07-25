@@ -3,6 +3,7 @@ import { AddNewContactModal } from "actions/addNewContactModal";
 import { App, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 import { AddInteractionModal } from "actions/addInteractionModal";
 import { Contact, readContact } from "models/Contact";
+import { AddGroupEmailInteractionModal } from "actions/addGroupEmailInteractionModal";
 
 // Remember to rename these classes and interfaces!
 
@@ -50,6 +51,16 @@ export default class ObsidianGlitchassassin extends Plugin {
 				).open();
 			},
 		);
+		this.addRibbonIcon(
+			"mails",
+			"Record Deacon Care Group Email",
+			(evt: MouseEvent) => {
+				new AddGroupEmailInteractionModal(
+					this.app,
+					this.settings,
+				).open();
+			},
+		);
 
 		this.addCommand({
 			id: "glitchassassin-add-new-contact",
@@ -77,7 +88,16 @@ export default class ObsidianGlitchassassin extends Plugin {
 				).open();
 			},
 		});
-
+		this.addCommand({
+			id: "glitchassassin-deacon-care-group-email",
+			name: "Record Deacon Care Group Email",
+			callback: () => {
+				new AddGroupEmailInteractionModal(
+					this.app,
+					this.settings,
+				).open();
+			},
+		});
 		// This adds a settings tab so the user can configure various aspects of the plugin
 		this.addSettingTab(new ContactsSettingTab(this.app, this));
 	}
@@ -97,12 +117,24 @@ export default class ObsidianGlitchassassin extends Plugin {
 	}
 
 	async getContacts(): Promise<Array<Contact>> {
-		const contactFiles = this.app.vault.getFolderByPath(this.settings.contactsDirectory)?.children
-			.filter((fileOrFolder): fileOrFolder is TFile => fileOrFolder instanceof TFile) ?? [];
-		const contacts = await Promise.all(contactFiles.map(file => readContact(this.app, file.path)));
-		return contacts.filter((contact): contact is Contact => Boolean(contact)).sort((a, b) => {
-			return (a.lastContacted?.getTime() ?? 0) - (b.lastContacted?.getTime() ?? 0);
-		});
+		const contactFiles =
+			this.app.vault
+				.getFolderByPath(this.settings.contactsDirectory)
+				?.children.filter(
+					(fileOrFolder): fileOrFolder is TFile =>
+						fileOrFolder instanceof TFile,
+				) ?? [];
+		const contacts = await Promise.all(
+			contactFiles.map((file) => readContact(this.app, file.path)),
+		);
+		return contacts
+			.filter((contact): contact is Contact => Boolean(contact))
+			.sort((a, b) => {
+				return (
+					(a.lastContacted?.getTime() ?? 0) -
+					(b.lastContacted?.getTime() ?? 0)
+				);
+			});
 	}
 }
 
