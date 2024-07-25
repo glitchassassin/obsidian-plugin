@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-glitchassassin",
-	"version": "1.0.7",
+	"version": "1.0.8",
 	"description": "Personal command center by glitchassassin",
 	"main": "main.js",
 	"scripts": {
